@@ -1,12 +1,28 @@
 from vosk import KaldiRecognizer, Model
 import os
 import pyaudio
+import pyttsx4
+import json
 
-model = Model('model')
+
+engine = pyttsx4.init()
+
+voices = engine.getProperty("voices")
+engine.setProperty("voice", voices[-2].id)
+
+
+def speak(text):
+    engine.say(text)
+    engine.runAndWait()
+
+
+model = Model("model")
 rec = KaldiRecognizer(model, 16000)
 
 p = pyaudio.PyAudio()
-stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=8000)
+stream = p.open(
+    format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=8000
+)
 stream.start_stream()
 
 while True:
@@ -14,8 +30,10 @@ while True:
     if len(data) == 0:
         break
     if rec.AcceptWaveform(data):
-        print(rec.Result())
-    else:
-        print(rec.PartialResult())
+        result = rec.Result()
+        result = json.loads(result)
 
-print(rec.FinalResult())
+        if result is not None:
+            text = result["text"]
+            print(text)
+            speak(text)
